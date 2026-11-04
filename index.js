@@ -363,31 +363,6 @@ app.put(['/studios/:id', '/api/studios/:id'], verifyToken, async (req, res) => {
     }
 });
 
-// Protected Route: Delete Studio (লগইন করা বাধ্যতামূলক এবং মালিকানা চেক)
-app.delete(['/studios/:id', '/api/studios/:id'], verifyToken, async (req, res) => {
-    try {
-        const id = req.params.id;
-        if (!ObjectId.isValid(id)) {
-            return res.status(404).send({ message: "Studio not found" });
-        }
-        const query = { _id: new ObjectId(id) };
-
-        // মালিকানা ভেরিফিকেশন
-        const existingStudio = await studioCollection.findOne(query);
-        if (!existingStudio) {
-            return res.status(404).send({ message: "Studio not found" });
-        }
-        if (existingStudio.hostEmail && existingStudio.hostEmail.toLowerCase() !== req.user.email.toLowerCase()) {
-            return res.status(403).send({ message: "Forbidden: You are not authorized to delete this studio" });
-        }
-
-        const result = await studioCollection.deleteOne(query);
-        res.send(result);
-    } catch (error) {
-        res.status(500).send({ message: "Failed to delete studio" });
-    }
-});
-
 // ================= BOOKING APIs =================
 
 // Protected Route: Create Booking (Double-Booking Prevention with standard interval overlap)
