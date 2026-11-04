@@ -296,28 +296,7 @@ app.post(['/studios', '/api/studios'], verifyToken, async (req, res) => {
     }
 });
 
-// Protected Route: Get My Studio Listings (লগইন করা বাধ্যতামূলক)
-app.get(['/my-listings', '/api/my-listings'], verifyToken, async (req, res) => {
-    try {
-        const email = req.query.email;
-        if (!email || req.user.email.toLowerCase() !== email.toLowerCase()) {
-            return res.status(403).send({ message: 'Forbidden access' });
-        }
-        const query = { 
-            hostEmail: { $regex: new RegExp(`^${email.trim()}$`, 'i') } 
-        };
-        const listings = await studioCollection.find(query).toArray();
-        const result = listings.map(studio => ({
-            ...studio,
-            _id: studio._id.toString(),
-            imageUrl: studio.imageUrl || studio.thumbnail || '',
-            thumbnail: studio.thumbnail || studio.imageUrl || ''
-        }));
-        res.send(result);
-    } catch (error) {
-        res.status(500).send({ message: "Failed to fetch user listings" });
-    }
-});
+
 
 // Protected Route: Update Studio (লগইন করা বাধ্যতামূলক এবং মালিকানা চেক)
 app.put(['/studios/:id', '/api/studios/:id'], verifyToken, async (req, res) => {
