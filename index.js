@@ -97,35 +97,7 @@ app.post(['/logout', '/api/logout'], async (req, res) => {
     res.clearCookie('token', getCookieOptions()).send({ success: true });
 });
 
-// রেজিস্টার করা ইউজারদের ডাটা MongoDB তে সেভ করার API
-app.post(['/users', '/api/users'], async (req, res) => {
-    try {
-        const newUser = req.body;
-        
-        if (!newUser.email || !newUser.name) {
-            return res.status(400).send({ message: 'Name and email are required.' });
-        }
 
-        // চেক করা ইউজার ইতিমধ্যে ডাটাবেজে আছে কি না
-        const existingUser = await userCollection.findOne({ 
-            email: { $regex: new RegExp(`^${newUser.email.trim()}$`, 'i') } 
-        });
-        if (existingUser) {
-            return res.status(400).send({ message: 'User already exists!' });
-        }
-
-        const userToSave = {
-            ...newUser,
-            email: newUser.email.trim().toLowerCase(),
-            createdAt: new Date()
-        };
-
-        const result = await userCollection.insertOne(userToSave);
-        res.send(result);
-    } catch (error) {
-        res.status(500).send({ message: "Failed to register user" });
-    }
-});
 
 // Google Authentication / Sign In Route
 app.post(['/auth/google', '/api/auth/google'], async (req, res) => {
@@ -296,7 +268,28 @@ app.post(['/studios', '/api/studios'], verifyToken, async (req, res) => {
     }
 });
 
-
+// Protected Route: Get My Studio Listings (লগইন করা বাধ্যতামূলক)
+app.get(['/my-listings', '/api/my-listings'], verifyToken, async (req, res) => {
+    try {
+        const email = req.query.email;
+        if (!email || req.user.email.toLowerCase() !== email.toLowerCase()) {
+            return res.status(403).send({ message: 'Forbidden access' });
+        }
+        const query = { 
+            hostEmail: { $regex: new RegExp(`^${email.trim()}$`, 'i') } 
+        };
+        const listings = await studioCollection.find(query).toArray();
+        const result = listings.map(studio => ({
+            ...studio,
+            _id: studio._id.toString(),
+            imageUrl: studio.imageUrl || studio.thumbnail || '',
+            thumbnail: studio.thumbnail || studio.imageUrl || ''
+        }));
+        res.send(result);
+    } catch (error) {
+        res.status(500).send({ message: "Failed to fetch user listings" });
+    }
+});
 
 // Protected Route: Update Studio (লগইন করা বাধ্যতামূলক এবং মালিকানা চেক)
 app.put(['/studios/:id', '/api/studios/:id'], verifyToken, async (req, res) => {
