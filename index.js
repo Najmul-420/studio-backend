@@ -319,49 +319,6 @@ app.get(['/my-listings', '/api/my-listings'], verifyToken, async (req, res) => {
     }
 });
 
-// Protected Route: Update Studio (লগইন করা বাধ্যতামূলক এবং মালিকানা চেক)
-app.put(['/studios/:id', '/api/studios/:id'], verifyToken, async (req, res) => {
-    try {
-        const id = req.params.id;
-        if (!ObjectId.isValid(id)) {
-            return res.status(404).send({ message: "Studio not found" });
-        }
-        const filter = { _id: new ObjectId(id) };
-
-        // মালিকানা ভেরিফিকেশন
-        const existingStudio = await studioCollection.findOne(filter);
-        if (!existingStudio) {
-            return res.status(404).send({ message: "Studio not found" });
-        }
-        if (existingStudio.hostEmail && existingStudio.hostEmail.toLowerCase() !== req.user.email.toLowerCase()) {
-            return res.status(403).send({ message: "Forbidden: You are not authorized to edit this studio" });
-        }
-
-        const updatedStudio = req.body;
-        const image = updatedStudio.thumbnail || updatedStudio.imageUrl || existingStudio.thumbnail || existingStudio.imageUrl || '';
-
-        const updateDoc = {
-            $set: {
-                title: updatedStudio.title,
-                category: updatedStudio.category,
-                hourlyRate: updatedStudio.hourlyRate,
-                securityDeposit: updatedStudio.securityDeposit,
-                maxCapacity: updatedStudio.maxCapacity,
-                location: updatedStudio.location,
-                thumbnail: image,
-                imageUrl: image,
-                images: updatedStudio.images || existingStudio.images || [],
-                overview: updatedStudio.overview,
-                amenities: updatedStudio.amenities,
-                updatedAt: new Date()
-            },
-        };
-        const result = await studioCollection.updateOne(filter, updateDoc);
-        res.send(result);
-    } catch (error) {
-        res.status(500).send({ message: "Failed to update studio" });
-    }
-});
 
 // Protected Route: Delete Studio (লগইন করা বাধ্যতামূলক এবং মালিকানা চেক)
 app.delete(['/studios/:id', '/api/studios/:id'], verifyToken, async (req, res) => {
