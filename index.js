@@ -454,35 +454,6 @@ app.get(['/my-bookings', '/api/my-bookings'], verifyToken, async (req, res) => {
     }
 });
 
-// Protected Route: Cancel Booking (লগইন করা বাধ্যতামূলক এবং বুকিং ইউজার ভেরিফিকেশন)
-app.patch(['/bookings/cancel/:id', '/api/bookings/cancel/:id'], verifyToken, async (req, res) => {
-    try {
-        const id = req.params.id;
-        if (!ObjectId.isValid(id)) {
-            return res.status(400).send({ message: "Invalid booking ID" });
-        }
-        const filter = { _id: new ObjectId(id) };
-
-        const booking = await bookingCollection.findOne(filter);
-        if (!booking) {
-            return res.status(404).send({ message: "Booking not found" });
-        }
-        if (booking.userEmail.toLowerCase() !== req.user.email.toLowerCase()) {
-            return res.status(403).send({ message: "Forbidden: You can only cancel your own booking" });
-        }
-
-        const updateDoc = {
-            $set: { 
-                status: 'Cancelled',
-                cancelledAt: new Date()
-            }
-        };
-        const result = await bookingCollection.updateOne(filter, updateDoc);
-        res.send(result);
-    } catch (error) {
-        res.status(500).send({ message: "Failed to cancel booking" });
-    }
-});
 
 // Root Endpoint
 app.get("/", (req, res) => {
